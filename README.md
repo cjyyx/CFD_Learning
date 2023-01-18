@@ -4,7 +4,7 @@
 
 此外我的笔记全部存储在GitHub代码仓库中，该代码仓库还包含其他cfd学习资料，如cfd相关教材等，有需自取。
 
-我笔记发布平台为知乎，地址为https://zhuanlan.zhihu.com/p/599909213。
+我笔记发布平台为知乎，地址为https://zhuanlan.zhihu.com/p/599909213
 
 此外推荐其它cfd资源
 
