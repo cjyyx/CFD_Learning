@@ -2,14 +2,11 @@
 import numpy as np
 from fipy import *
 from fipy.tools import numerix
-from tqdm import tqdm
 
 # 打印完整数组
 np.set_printoptions(threshold=np.inf)
 
 # %%
-
-D = 1.
 
 T_hot = 80.
 T_cool = 20.
@@ -36,14 +33,9 @@ viewer = Viewer(
 
 # %%
 
-eq = TransientTerm() == DiffusionTerm(coeff=D)
+eq = DiffusionTerm()
 
-# %%
-
-timeStepDuration = 1
-
-for step in tqdm(range(10)):
-    eq.solve(var=T,dt=timeStepDuration)
+eq.solve(var=T)
 
 
 # %%
