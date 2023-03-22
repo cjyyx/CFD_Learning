@@ -14,7 +14,9 @@ y2 = 8.
 a = 2.
 
 gmsh.initialize()
+gmsh.option.setNumber("Mesh.MshFileVersion", 2.2)
 gmsh.option.setNumber("General.Terminal", 1)
+
 gmsh.model.add("clip_model")
 geom = gmsh.model.geo
 
@@ -77,7 +79,7 @@ gmsh.model.mesh.generate(2)
 
 
 filename = 'clip'
-gmsh.write(filename+".msh")
+gmsh.write(filename+".msh2")
 
 print("generate ok")
 
@@ -88,6 +90,3 @@ gmsh.fltk.run()
 
 gmsh.finalize()
 
-os.system("gmsh -2 -format msh2 {}.msh -o {}.msh2".format(
-    filename, filename
-))

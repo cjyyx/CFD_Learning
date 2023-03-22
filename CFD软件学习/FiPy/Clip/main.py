@@ -33,7 +33,7 @@ viewer = Viewer(
 
 # %%
 
-eq = DiffusionTerm()
+eq = DiffusionTerm(var=T) == 0
 
 eq.solve(var=T)
 

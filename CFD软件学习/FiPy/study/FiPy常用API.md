@@ -87,8 +87,6 @@ faceNum是网格面数
 
 返回`numpy.ndarray`，表示网格中心的坐标
 
-
-
 ### [Mesh](https://www.ctcms.nist.gov/fipy/fipy/generated/fipy.meshes.html##fipy.meshes.mesh.Mesh)
 
 基类：AbstractMesh
@@ -111,7 +109,7 @@ faceNum是网格面数
 
 详见(https://zhuanlan.zhihu.com/p/614003913)
 
-####通过标签获取网格面
+#### 通过标签获取网格面
 
 详见(https://zhuanlan.zhihu.com/p/614003913)
 
@@ -161,3 +159,4 @@ viewer.viewers[1].plot()
 ## 绘制yVelocity 的图
 viewer.viewers[2].plot()
 ```
+
