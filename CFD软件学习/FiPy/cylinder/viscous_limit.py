@@ -63,6 +63,28 @@ outletFace = mesh.physicalFaces["outlet"]
 cylinderFace = mesh.physicalFaces["cylinder"]
 top_bottomFace = mesh.physicalFaces["top"] | mesh.physicalFaces["bottom"]
 
+# xVelocity.constrain(U, inletFace)
+# yVelocity.constrain(0., inletFace)
+# pressure.grad.constrain(0., inletFace)
+# pressureCorrection.grad.constrain(0., inletFace)
+
+# xVelocity.grad.constrain(0., outletFace)
+# yVelocity.grad.constrain(0., outletFace)
+# pressure.constrain(0., outletFace)
+# pressureCorrection.constrain(0., outletFace)
+
+# xVelocity.constrain(0., cylinderFace)
+# yVelocity.constrain(0., cylinderFace)
+# pressure.grad.constrain(0., cylinderFace)
+# pressureCorrection.grad.constrain(0., cylinderFace)
+
+# xVelocity.constrain(U, top_bottomFace)
+# # xVelocity.faceGrad.constrain(0., top_bottomFace)
+# yVelocity.grad.constrain(0., top_bottomFace)
+# pressure.constrain(0., top_bottomFace)
+# pressureCorrection.constrain(0., top_bottomFace)
+
+
 xVelocity.constrain(U, inletFace)
 yVelocity.constrain(0., inletFace)
 pressure.faceGrad.constrain(0., inletFace)
@@ -127,7 +149,7 @@ def sweep():
 
 # %%
 
-res_limit = 0.02
+res_limit = 0.5
 
 while(1):
     xres, yres, pres = sweep()
