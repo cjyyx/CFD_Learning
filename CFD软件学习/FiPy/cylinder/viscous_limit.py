@@ -4,6 +4,7 @@ import numpy as np
 from fipy import *
 from fipy.tools import numerix
 from fipy.variables.faceGradVariable import _FaceGradVariable
+from tqdm import tqdm
 
 # 打印完整数组
 np.set_printoptions(threshold=np.inf)
@@ -14,160 +15,146 @@ filename = "cylinder"
 mesh = Gmsh2D("{}.msh2".format(filename))
 
 # %%
-L = 1.0
-N = 50
-dL = L / N
-viscosity = 1
-U = 10.
 
-pressureRelaxation = 0.9
-velocityRelaxation = 0.8
+U = 10.
+rho = 100.
+
+Rp = 0.8
+Rv = 0.8
 
 # %%
+Xc, Yc = mesh.cellCenters
+Xf, Yf = mesh.faceCenters
+Vc = mesh.cellVolumes
 
-xVelocity = CellVariable(mesh=mesh, name='X velocity')
-yVelocity = CellVariable(mesh=mesh, name='Y velocity')
-pressure = CellVariable(mesh=mesh, name='pressure')
-pressureCorrection = CellVariable(mesh=mesh)
+Vx = CellVariable(mesh=mesh, name="x velocity", value=U)
+Vy = CellVariable(mesh=mesh, name="y velocity", value=0.)
 
-velocity = FaceVariable(mesh=mesh, rank=1)
+Vf = FaceVariable(mesh=mesh, rank=1)
+Vf.setValue((Vx.faceValue, Vy.faceValue))
 
-ap = CellVariable(mesh=mesh, value=1.)
+p = CellVariable(mesh=mesh, name="pressure", value=-Xc/100.)
+pc = CellVariable(mesh=mesh, value=0.)
 
-volume = CellVariable(
-    mesh=mesh, value=mesh.cellVolumes, name='Volume'
-)
-contrvolume = volume.arithmeticFaceValue
+apx = CellVariable(mesh=mesh, value=1.)
+apy = CellVariable(mesh=mesh, value=1.)
 
-X, Y = mesh.faceCenters
-
-xVelocityEq = \
-    DiffusionTerm(coeff=viscosity, var=xVelocity) \
-    - pressure.grad.dot([1., 0.])
-yVelocityEq = \
-    DiffusionTerm(coeff=viscosity, var=yVelocity) \
-    - pressure.grad.dot([0., 1.])
-
-coeff = \
-    1. / (
-        ap.arithmeticFaceValue
-        * mesh._faceAreas
-        * mesh._cellDistances
-    )
-pressureCorrectionEq = \
-    DiffusionTerm(coeff=coeff) \
-    - velocity.divergence
+# %%
 
 inletFace = mesh.physicalFaces["inlet"]
 outletFace = mesh.physicalFaces["outlet"]
 cylinderFace = mesh.physicalFaces["cylinder"]
-top_bottomFace = mesh.physicalFaces["top"] | mesh.physicalFaces["bottom"]
+top_bottomFace = \
+    mesh.physicalFaces["top"] | mesh.physicalFaces["bottom"]
 
-# xVelocity.constrain(U, inletFace)
-# yVelocity.constrain(0., inletFace)
-# pressure.grad.constrain(0., inletFace)
-# pressureCorrection.grad.constrain(0., inletFace)
+Vx.constrain(U, inletFace)
+Vy.constrain(0., inletFace)
+p.faceGrad.constrain(0., inletFace)
+pc.faceGrad.constrain(0., inletFace)
 
-# xVelocity.grad.constrain(0., outletFace)
-# yVelocity.grad.constrain(0., outletFace)
-# pressure.constrain(0., outletFace)
-# pressureCorrection.constrain(0., outletFace)
+Vx.faceGrad.constrain(0., outletFace)
+Vy.faceGrad.constrain(0., outletFace)
+p.constrain(0., outletFace)
+pc.constrain(0., outletFace)
 
-# xVelocity.constrain(0., cylinderFace)
-# yVelocity.constrain(0., cylinderFace)
-# pressure.grad.constrain(0., cylinderFace)
-# pressureCorrection.grad.constrain(0., cylinderFace)
+Vx.constrain(0., cylinderFace)
+Vy.constrain(0., cylinderFace)
+p.faceGrad.constrain(0., cylinderFace)
+pc.faceGrad.constrain(0., cylinderFace)
 
-# xVelocity.constrain(U, top_bottomFace)
-# # xVelocity.faceGrad.constrain(0., top_bottomFace)
-# yVelocity.grad.constrain(0., top_bottomFace)
-# pressure.constrain(0., top_bottomFace)
-# pressureCorrection.constrain(0., top_bottomFace)
+Vx.faceGrad.constrain(0., top_bottomFace)
+Vy.faceGrad.constrain(0., top_bottomFace)
+p.constrain(0., top_bottomFace)
+pc.constrain(0., top_bottomFace)
 
+# %%
 
-xVelocity.constrain(U, inletFace)
-yVelocity.constrain(0., inletFace)
-pressure.faceGrad.constrain(0., inletFace)
-pressureCorrection.faceGrad.constrain(0., inletFace)
+Vx_Eq = \
+    UpwindConvectionTerm(coeff=Vf, var=Vx) * rho \
+    + ImplicitSourceTerm(coeff=1.0, var=p.grad[0])
+Vy_Eq = \
+    UpwindConvectionTerm(coeff=Vf, var=Vy) * rho \
+    + ImplicitSourceTerm(coeff=1.0, var=p.grad[1])
 
-xVelocity.faceGrad.constrain(0., outletFace)
-yVelocity.faceGrad.constrain(0., outletFace)
-pressure.constrain(0., outletFace)
-pressureCorrection.constrain(0., outletFace)
-
-xVelocity.constrain(0., cylinderFace)
-yVelocity.constrain(0., cylinderFace)
-pressure.faceGrad.constrain(0., cylinderFace)
-pressureCorrection.faceGrad.constrain(0., cylinderFace)
-
-xVelocity.constrain(U, top_bottomFace)
-# xVelocity.faceGrad.constrain(0., top_bottomFace)
-yVelocity.faceGrad.constrain(0., top_bottomFace)
-pressure.constrain(0., top_bottomFace)
-pressureCorrection.constrain(0., top_bottomFace)
-
+# coeff = (
+#     1. / (
+#         apx.faceValue
+#         * mesh._faceAreas
+#         * mesh._cellDistances
+#     ),
+#     1. / (
+#         apy.faceValue
+#         * mesh._faceAreas
+#         * mesh._cellDistances
+#     )
+# )
+coeff = (
+    1. / (
+        apx.faceValue
+        * mesh._faceAreas
+        * mesh._cellDistances
+    )
+)
+pc_Eq = \
+    DiffusionTerm(coeff=coeff, var=pc) \
+    - Vf.divergence
 
 # %%
 
 
 def sweep():
+    Vx_Eq.cacheMatrix()
+    # Vx_Eq.cacheRHSvector()
 
-    xVelocityEq.cacheMatrix()
-    xres = xVelocityEq.sweep(
-        var=xVelocity,
-        underRelaxation=velocityRelaxation)
-    xmat = xVelocityEq.matrix
+    xres = Vx_Eq.sweep(var=Vx, underRelaxation=Rv)
 
-    yres = yVelocityEq.sweep(
-        var=yVelocity,
-        underRelaxation=velocityRelaxation)
+    xmat = Vx_Eq.matrix
+    # xrhs = Vx_Eq.RHSvector
+    apx[:] = numerix.asarray(xmat.takeDiagonal())
 
-    ap[:] = -numerix.asarray(xmat.takeDiagonal())
+    # Vy_Eq.cacheMatrix()
+    # Vy_Eq.cacheRHSvector()
 
-    presgrad = pressure.grad
-    facepresgrad = _FaceGradVariable(pressure)
+    yres = Vy_Eq.sweep(var=Vy, underRelaxation=Rv)
 
-    velocity[0] = xVelocity.arithmeticFaceValue \
-        + contrvolume / ap.arithmeticFaceValue * \
-        (presgrad[0].arithmeticFaceValue-facepresgrad[0])
-    velocity[1] = yVelocity.arithmeticFaceValue \
-        + contrvolume / ap.arithmeticFaceValue * \
-        (presgrad[1].arithmeticFaceValue-facepresgrad[1])
+    # ymat = Vy_Eq.matrix
+    # yrhs = Vy_Eq.RHSvector
+    # apy[:] = numerix.asarray(ymat.takeDiagonal())
 
-    pressureCorrectionEq.cacheRHSvector()
-    pres = pressureCorrectionEq.sweep(var=pressureCorrection)
-    rhs = pressureCorrectionEq.RHSvector
+    # 注意
+    # xrhs == -p.grad[0].value * Vc
+    # yrhs == -p.grad[1].value * Vc
 
-    pressure.setValue(pressure + pressureRelaxation * pressureCorrection)
-    xVelocity.setValue(xVelocity - pressureCorrection.grad[0] /
-                       ap * mesh.cellVolumes)
-    yVelocity.setValue(yVelocity - pressureCorrection.grad[1] /
-                       ap * mesh.cellVolumes)
+    Vf.setValue((Vx.faceValue, Vy.faceValue))
 
-    return xres, yres, pres
+    pcres = pc_Eq.sweep(var=pc)
+    p.setValue(p + Rp * pc)
 
+    Vx.setValue(Vx-(Vc*pc.grad[0])/apx)
+    Vy.setValue(Vy-(Vc*pc.grad[1])/apx)
+
+    return xres, yres, pcres
 
 # %%
 
-res_limit = 0.5
+step_num = 200
+res_limit = 66
 
-while(1):
-    xres, yres, pres = sweep()
+pbar = tqdm(range(step_num))
+for i in pbar:
+    xres, yres, pcres = sweep()
 
-    info = """ 
-    xres= %(xres)g
-    yres= %(yres)g
-    pres= %(pres)g
-     """
-    print(info % locals())
+    pbar.set_postfix({
+        "xres": f'{xres:.2e}',
+        "yres": f'{yres:.2e}',
+        "pcres": f'{pcres:.2e}'
+    })
 
-    if (max([xres, yres, pres]) < res_limit):
+    if (sum([xres, yres, pcres]) < res_limit):
         break
 
-
 # %%
 
-Viewer(pressure)
-Viewer(xVelocity)
-Viewer(yVelocity)
-Viewer(velocity)
+Viewer(p)
+Viewer(Vx, datamin=-U/5, datamax=U*2)
+Viewer(Vy)
