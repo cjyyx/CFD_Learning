@@ -8,10 +8,10 @@ isTest = True
 R = 1.
 N = 32
 
-L = 16.
-H = 10.
+L = 36.
+H = 32.
 
-meshSize = 0.6
+meshSize = 0.5
 enMeshSize = 0.2
 
 filename = "cylinder"
@@ -93,11 +93,12 @@ geom.synchronize()
 Box = gmsh.model.mesh.field.add("Box")
 gmsh.model.mesh.field.setNumber(Box, "VIn", enMeshSize)
 gmsh.model.mesh.field.setNumber(Box, "VOut", meshSize)
-gmsh.model.mesh.field.setNumber(Box, "XMin", -R*3)
+gmsh.model.mesh.field.setNumber(Box, "XMin", -(L/2)*0.3)
 gmsh.model.mesh.field.setNumber(Box, "XMax", (L/2)*0.88)
-gmsh.model.mesh.field.setNumber(Box, "YMin", -R*3)
-gmsh.model.mesh.field.setNumber(Box, "YMax", R*3)
-gmsh.model.mesh.field.setNumber(Box, "Thickness", R)
+# gmsh.model.mesh.field.setNumber(Box, "XMax", (L/2))
+gmsh.model.mesh.field.setNumber(Box, "YMin", -(H/2)*0.5)
+gmsh.model.mesh.field.setNumber(Box, "YMax", (H/2)*0.5)
+gmsh.model.mesh.field.setNumber(Box, "Thickness", L*0.05)
 
 Min = gmsh.model.mesh.field.add("Min")
 gmsh.model.mesh.field.setNumbers(Min, "FieldsList", [Box])
