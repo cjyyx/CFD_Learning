@@ -176,31 +176,31 @@ def valueRange(val, a, b):
 # %%
 
 
-MaxSweep = 6000
-res_limit = 0.05
+MaxSweep = 100
+res_limit = 1e-5
 sum_res = 1e10
 
 Rp = 0.8
-Rv = 0.6
+Rv = 0.5
 
 pbar = tqdm(range(MaxSweep))
 for i in pbar:
 
-    # if sum_res > 1e2:
-    #     Rp = 0.98
-    #     Rv = 0.8
-    # elif valueRange(sum_res, 28., 1e2):
-    #     Rp = 0.8
-    #     Rv = 0.5
-    # elif valueRange(sum_res, 10., 28.):
-    #     Rp = 0.7
-    #     Rv = 0.45
-    # elif valueRange(sum_res, 0.5, 10.):
-    #     Rp = 0.6
-    #     Rv = 0.4
-    # elif valueRange(sum_res, 0, 0.5):
-    #     Rp = 0.5
-    #     Rv = 0.3
+    if sum_res > 1e2:
+        Rp = 0.8
+        Rv = 0.5
+    elif valueRange(sum_res, 28., 1e2):
+        Rp = 0.9
+        Rv = 0.6
+    elif valueRange(sum_res, 10., 28.):
+        Rp = 0.95
+        Rv = 0.8
+    elif valueRange(sum_res, 0.5, 10.):
+        Rp = 0.98
+        Rv = 0.92
+    elif valueRange(sum_res, 0, 0.5):
+        Rp = 0.998
+        Rv = 0.95
 
     xres, yres, pcres = sweep(Rp, Rv)
     sum_res = sum([xres, yres, pcres])
@@ -223,14 +223,31 @@ for i in pbar:
 
     if (sum_res > 1e4):
         if (len(sum_res_list) > 20):
-            if ((sum_res_list[-1] - sum_res_list[-3]) > 1e3):
-                print("残差爆炸")
-                break
+            # if ((sum_res_list[-1] - sum_res_list[-3]) > 1e3):
+            #     print("残差爆炸")
+                # break
             if (is_increasing(sum_res_list[-18:])):
                 print("残差不收敛")
                 break
 
-plt.plot(sum_res_list[:])
+plt.plot(np.log10(np.array(sum_res_list)))
+plt.xlabel('sweep num')
+plt.ylabel('log10 sum res')
+plt.show()
+
+# %%
+
+n = len(sum_res_list)
+y = np.array(sum_res_list)
+y = np.log10(y)
+
+a = 12720
+b = n
+
+plt.plot(range(a,b), y[a:b])
+plt.xlabel('sweep num')
+plt.ylabel('log10 sum res')
+plt.show()
 
 
 # %%
@@ -245,11 +262,10 @@ Viewer(Vx)
 Viewer(Vy)
 
 # %%
-
 OverflowPrevention()
-Viewer(p).plot("p.png")
-Viewer(Vx).plot("Vx.png")
-Viewer(Vy).plot("Vy.png")
+Viewer(p).fig.savefig('p.png', dpi=600)
+Viewer(Vx).fig.savefig('Vx.png', dpi=600)
+Viewer(Vy).fig.savefig('Vy.png', dpi=600)
 
 # %%
 
@@ -292,11 +308,10 @@ xmat.matrix.data == ymat.matrix.data
 1. 降低 Rp
 2. 设置阈值，避免流场变量溢出
 
+最终残差处于缓慢下降时，使用更高的 Rp,Rv 效果意外得好。
  """
 
 # %%
-
-
 sparse_matrix = Vx_Eq.matrix.matrix
 
 # convert sparse matrix to dense matrix
