@@ -11,8 +11,8 @@ N = 32
 L = 36.
 H = 32.
 
-meshSize = 0.4
-enMeshSize = 0.12
+meshSize = 0.8
+enMeshSize = 0.2
 
 filename = "cylinder"
 

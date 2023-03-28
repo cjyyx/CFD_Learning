@@ -1,6 +1,18 @@
+#! https://zhuanlan.zhihu.com/p/617614907
 
 # Gmsh 和 FiPy 求解稳态圆柱绕流
 
+本项目的源码保存在 github 仓库(https://github.com/cjyyx/CFD_Learning/tree/main/CFD%E8%BD%AF%E4%BB%B6%E5%AD%A6%E4%B9%A0/FiPy/cylinder)。如果下载整个目录，可以直接运行 `SIMPLE.py`，结果如图
+
+![](assart/p.png)![](assart/Vx.png)![](assart/Vy.png)
+
+<!-- ![](assart/splice.png) -->
+
+## 网格生成
+
+采用 Gmsh 的 python 接口生成网格，源码为 `Mesh.py`，生成网格如图
+
+![](PasteImage/2023-03-28-12-01-19.png)
 
 ## 控制方程组
 
@@ -50,6 +62,8 @@ SIMPLE 算法的核心思想是把流场拆分为网格面上的流场 $\vec{v}$
 因此，我们可以在 FiPy 中声明变量
 
 ```python
+U = 10.
+
 Vx = CellVariable(mesh=mesh, name="x velocity", value=U)
 Vy = CellVariable(mesh=mesh, name="y velocity", value=0.)
 
@@ -71,6 +85,9 @@ $$
 在 FiPy 中的代码如下
 
 ```python
+mu = 0.1
+rho = 1.
+
 Vx_Eq = \
     UpwindConvectionTerm(coeff=Vf, var=Vx) * rho == \
     DiffusionTerm(coeff=mu, var=Vx) - \
@@ -103,9 +120,15 @@ yrhs = Vy_Eq.RHSvector
 apy[:] = numerix.asarray(ymat.takeDiagonal())
 ```
 
-`xmat, ymat` 就是 $a_{P}, a_{A}$ 构成的矩阵，`xrhs, yrhs` 就是 $-V_{P}\left(\nabla p^{*}\right)_{P}$ 构成的列向量。
+其中，`xmat, ymat` 是 $a_{P}, a_{A}$ 构成的系数矩阵；`xrhs, yrhs` 是 $-V_{P}\left(\nabla p^{*}\right)_{P}$ 构成的列向量；`apx, apy` 是系数矩阵对角线上的值，即 $a_{P}$ 构成的列向量；`xres, yres` 是残差，与迭代的收敛相关。
 
-事实上，`xmat, ymat` 这两个矩阵是完全一致的，`xrhs, yrhs` 这两个列向量也是完全一致的。且当欠松弛系数 `Rv = 1.` 时，有
+事实上，`xmat, ymat` 这两个矩阵是完全一致的，即
+
+```python
+xmat.matrix.data == ymat.matrix.data # True
+```
+
+且当欠松弛系数 `Rv = 1.` 时，有
 
 ```python
 Vc = mesh.cellVolumes
@@ -166,7 +189,7 @@ $$
 \vec{u}_{P}^{\prime}=-\frac{V_{P}\left(\nabla p^{\prime}\right)_{P}}{a_{P}}
 $$
 
-结合连续性方程，可得
+代入连续性方程，可得
 
 $$
 \nabla \frac{V_{P}}{a_{P}} \cdot \nabla p^{\prime}=\nabla \cdot \vec{u}^{*}
@@ -212,14 +235,40 @@ Vf[1] = Vy.faceValue + Vcf / apx.faceValue * \
 
 ## 边界条件
 
-通常进行类似的外流场模拟，存在进口，出口和壁面三个边界条件。
+对于圆柱绕流，比较合适的边界条件组合是
 
-目前CFD中最稳定的边界条件组合是：
 - 进口固定速度，压力零梯度
 - 出口速度零梯度，压力固定值
 - 壁面速度为零，压力零梯度
 
-同时最好将出口和进口适当延长以减少进出口边界条件对内场的影响。其他的进一步细化调整可以获得更精确的结果。
+相应的，代码为
+
+```python
+inletFace = mesh.physicalFaces["inlet"]
+outletFace = mesh.physicalFaces["outlet"]
+cylinderFace = mesh.physicalFaces["cylinder"]
+top_bottomFace = mesh.physicalFaces["top"] | mesh.physicalFaces["bottom"]
+
+Vx.constrain(U, inletFace)
+Vy.constrain(0., inletFace)
+p.faceGrad.constrain(0., inletFace)
+pc.faceGrad.constrain(0., inletFace)
+
+Vx.faceGrad.constrain(0., outletFace)
+Vy.faceGrad.constrain(0., outletFace)
+p.constrain(0., outletFace)
+pc.constrain(0., outletFace)
+
+Vx.constrain(0., cylinderFace)
+Vy.constrain(0., cylinderFace)
+p.faceGrad.constrain(0., cylinderFace)
+pc.faceGrad.constrain(0., cylinderFace)
+
+Vx.faceGrad.constrain(0., top_bottomFace)
+Vy.faceGrad.constrain(0., top_bottomFace)
+p.constrain(0., top_bottomFace)
+pc.constrain(0., top_bottomFace)
+```
 
 ## 稳定性问题
 
@@ -241,27 +290,46 @@ $$
 
 当然，可以通过一系列手段，强行求出稳态解。
 
+### RuntimeError: Factor is exactly singular
 
+发生这个错误是因为离散动量方程的系数矩阵是奇异的，想要降低该错误发生的概率，可以采取以下措施
 
-当 Rv = 1. 时，有
-xrhs == (-p.grad[0].value * Vc)
-yrhs == (-p.grad[1].value * Vc)
+- 使用更精细网格
+- 降低 Rv
+- 提高雷诺数
 
-恒有
-xmat.matrix.data == ymat.matrix.data
+### 残差爆炸
 
-降低`RuntimeError: Factor is exactly singular`风险的方法
-1. 使用更精细网格
-2. 降低 Rv
-3. 降低 rho
+主要是因为雷诺数过高。避免残差爆炸可以采取以下措施
 
-残差爆炸出现原因
-1. Rp 过高
-2. 流场中出现奇点，形成正反馈
+- 使用更精细网格
+- 降低 Rp
+- 设置阈值，避免流场变量溢出，即
 
-降低梯度爆炸风险的方法
-1. 降低 Rp
-2. 设置阈值，避免流场变量溢出
+```python
+V_limit = 1e2
+p_limit = 2e3
 
-最终残差处于缓慢下降时，使用更高的 Rp,Rv 效果意外得好。
+Vx[Vx.value > V_limit] = V_limit
+Vx[Vx.value < -V_limit] = -V_limit
+
+Vy[Vy.value > V_limit] = V_limit
+Vy[Vy.value < -V_limit] = -V_limit
+
+Vf[Vf.value > V_limit] = V_limit
+Vf[Vf.value < -V_limit] = -V_limit
+
+p[p.value > p_limit] = p_limit
+p[p.value < -p_limit] = -p_limit
+```
+
+### 比较稳定的求解方法
+
+尽可能使用更精细网格。
+
+在迭代的开始阶段，调整雷诺数，使雷诺数较低；使 `Rv, Rp` 较低。从而确保迭代的稳定性。
+
+在迭代过程中，逐渐提升雷诺数至目标值；提升 `Rv, Rp` 以加快求解速度，但确保  `Rv, Rp` 小于 1。
+
+当残差稳定时，判断已经收敛，退出求解。
 
