@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from fipy import *
 from fipy.tools import numerix
-from fipy.variables.faceGradVariable import _FaceGradVariable
 from tqdm import tqdm
 
 # 打印完整数组
@@ -17,11 +16,8 @@ mesh = Gmsh2D("{}.msh2".format(filename))
 
 # %%
 
-# mu = 0.01
-# rho = 1000.
-
 mu = 0.1
-rho = 1.
+rho = 10.
 
 U = 10.
 
@@ -31,8 +27,7 @@ sum_res_list = []
 # %%
 Xc, Yc = mesh.cellCenters
 Vc = mesh.cellVolumes
-volume = CellVariable(mesh=mesh, value=mesh.cellVolumes)
-Vcf = volume.arithmeticFaceValue
+Vcf = CellVariable(mesh=mesh, value=Vc).faceValue
 
 Vx = CellVariable(mesh=mesh, name="x velocity", value=U)
 Vy = CellVariable(mesh=mesh, name="y velocity", value=0.)
@@ -85,19 +80,6 @@ Vy_Eq = \
     DiffusionTerm(coeff=mu, var=Vy) - \
     ImplicitSourceTerm(coeff=1.0, var=p.grad[1])
 
-# Vx_Eq = \
-#     DiffusionTerm(coeff=mu, var=Vx) - \
-#     ImplicitSourceTerm(coeff=1.0, var=p.grad[0])
-# Vy_Eq = \
-#     DiffusionTerm(coeff=mu, var=Vy) - \
-#     ImplicitSourceTerm(coeff=1.0, var=p.grad[1])
-
-# Vx_Eq = \
-#     UpwindConvectionTerm(coeff=Vf, var=Vx) * rho \
-#     + ImplicitSourceTerm(coeff=1.0, var=p.grad[0])
-# Vy_Eq = \
-#     UpwindConvectionTerm(coeff=Vf, var=Vy) * rho \
-#     + ImplicitSourceTerm(coeff=1.0, var=p.grad[1])
 
 coeff = (
     1. / (
@@ -115,6 +97,7 @@ pc_Eq = \
 V_limit = 1e2
 p_limit = 2e3
 
+
 def OverflowPrevention():
     Vx[Vx.value > V_limit] = V_limit
     Vx[Vx.value < -V_limit] = -V_limit
@@ -127,6 +110,7 @@ def OverflowPrevention():
 
     p[p.value > p_limit] = p_limit
     p[p.value < -p_limit] = -p_limit
+
 
 def sweep(Rp, Rv):
     OverflowPrevention()
@@ -141,7 +125,7 @@ def sweep(Rp, Rv):
     # Vf.setValue((Vx.faceValue, Vy.faceValue))
 
     presgrad = p.grad
-    facepresgrad = _FaceGradVariable(p)
+    facepresgrad = presgrad.faceValue
     Vf[0] = Vx.faceValue + Vcf / apx.faceValue * \
         (presgrad[0].faceValue-facepresgrad[0])
     Vf[1] = Vy.faceValue + Vcf / apx.faceValue * \
@@ -153,6 +137,15 @@ def sweep(Rp, Rv):
 
     Vx.setValue(Vx-(Vc*pc.grad[0])/apx)
     Vy.setValue(Vy-(Vc*pc.grad[1])/apx)
+    
+    # Vf.setValue((Vx.faceValue, Vy.faceValue))
+
+    presgrad = p.grad
+    facepresgrad = presgrad.faceValue
+    Vf[0] = Vx.faceValue + Vcf / apx.faceValue * \
+        (presgrad[0].faceValue-facepresgrad[0])
+    Vf[1] = Vy.faceValue + Vcf / apx.faceValue * \
+        (presgrad[1].faceValue-facepresgrad[1])
 
     return xres, yres, pcres
 
@@ -186,20 +179,20 @@ Rv = 0.5
 pbar = tqdm(range(MaxSweep))
 for i in pbar:
 
-    if sum_res > 1e2:
+    if sum_res > 2e2:
         Rp = 0.8
         Rv = 0.5
-    elif valueRange(sum_res, 28., 1e2):
-        Rp = 0.9
-        Rv = 0.6
+    elif valueRange(sum_res, 28., 2e2):
+        Rp = 0.92
+        Rv = 0.8
     elif valueRange(sum_res, 10., 28.):
         Rp = 0.95
         Rv = 0.8
-    elif valueRange(sum_res, 0.5, 10.):
+    elif valueRange(sum_res, 1., 10.):
         Rp = 0.98
-        Rv = 0.92
-    elif valueRange(sum_res, 0, 0.5):
-        Rp = 0.998
+        Rv = 0.9
+    elif valueRange(sum_res, 0, 1.):
+        Rp = 0.99
         Rv = 0.95
 
     xres, yres, pcres = sweep(Rp, Rv)
@@ -207,12 +200,6 @@ for i in pbar:
 
     sum_res_list.append(sum_res)
 
-    # pbar.set_postfix({
-    #     "xres": f'{xres:.2e}',
-    #     "yres": f'{yres:.2e}',
-    #     "pcres": f'{pcres:.2e}',
-    #     "sum": f'{s:.2e}'
-    # })
     pbar.set_postfix({
         "sum res": f'{sum_res:.2e}'
     })
@@ -225,7 +212,7 @@ for i in pbar:
         if (len(sum_res_list) > 20):
             # if ((sum_res_list[-1] - sum_res_list[-3]) > 1e3):
             #     print("残差爆炸")
-                # break
+            # break
             if (is_increasing(sum_res_list[-18:])):
                 print("残差不收敛")
                 break
@@ -244,7 +231,7 @@ y = np.log10(y)
 a = 12720
 b = n
 
-plt.plot(range(a,b), y[a:b])
+plt.plot(range(a, b), y[a:b])
 plt.xlabel('sweep num')
 plt.ylabel('log10 sum res')
 plt.show()
@@ -338,4 +325,3 @@ det_A = np.linalg.det(U) * ((-1) ** P[np.diag_indices_from(U)].sum())
 
 # 输出行列式值
 print('determinant of A:', det_A)
-
