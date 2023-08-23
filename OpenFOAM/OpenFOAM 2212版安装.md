@@ -2,7 +2,7 @@
 
 ```bash
 curl -s https://dl.openfoam.com/add-debian-repo.sh | sudo bash
-wget -q -O - https://dl.openfoam.com/add-debian-repo.sh | sudo bash
+sudo apt-get update && sudo apt-get upgrade
 sudo apt-get install openfoam2212-default
 
 echo "source /usr/lib/openfoam/openfoam2212/etc/bashrc" >> ~/.bashrc
