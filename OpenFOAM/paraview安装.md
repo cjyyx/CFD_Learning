@@ -1,3 +1,4 @@
+#! https://zhuanlan.zhihu.com/p/660892102
 # paraview 安装
 
 ## apt 安装
@@ -6,7 +7,7 @@
 sudo apt install paraview
 ```
 
-## 在官网下载
+## 安装包安装
 
 参考 https://blog.csdn.net/weixin_47492286/article/details/127210382
 
@@ -43,9 +44,9 @@ Segmentation fault
 
 下载 https://www.paraview.org/download/
 
-假设 windows 安装路径 `D:\ProgramFiles\ParaView\binparaview.exe` ，注意中间不要有空格
+假设 windows 安装路径 `D:\ProgramFiles\ParaView\binparaview.exe` ，注意**路径不要有空格**
 
-则运行以下命令
+接下来在 wsl 中运行以下命令
 
 ```bash
 echo "alias paraview=/mnt/d/ProgramFiles/ParaView/bin/paraview.exe" >> ~/.bashrc
@@ -64,9 +65,9 @@ sudo nano /usr/lib/openfoam/openfoam2306/bin/paraFoam
 alias paraview=/mnt/d/ProgramFiles/ParaView/bin/paraview.exe
 ```
 
-如果有缩放问题，可以进行下面设置
+<!-- 如果有缩放问题，可以进行下面设置
 
-![](PasteImage/2023-08-22-16-46-11.png)
+![](PasteImage/2023-08-22-16-46-11.png) -->
 
 另一种使用方式
 
@@ -75,3 +76,8 @@ foamToVTK -case cavity -ascii
 cmd.exe /C D:/ProgramFiles/ParaView/bin/paraview.exe --data=//wsl.localhost/Ubuntu$(pwd)/cavity/VTK/cavity.vtm.series
 ```
 
+## 判断安装成功
+
+```bash
+paraview
+```

@@ -1,7 +1,7 @@
-安装 OpenFOAM-v2306
+#! https://zhuanlan.zhihu.com/p/660892262
+# OpenFOAM-v2306 安装
 
 参考 https://develop.openfoam.com/Development/openfoam/-/wikis/precompiled/debian
-
 
 ```bash
 curl https://dl.openfoam.com/add-debian-repo.sh | sudo bash
@@ -13,7 +13,7 @@ echo "source /usr/lib/openfoam/openfoam2306/etc/bashrc" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-**paraview 另行安装**
+**paraview 另行安装**，参考 https://zhuanlan.zhihu.com/p/660892102
 
 验证安装成功
 
