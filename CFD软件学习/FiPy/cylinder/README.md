@@ -1,8 +1,11 @@
+<!-- 
 #! https://zhuanlan.zhihu.com/p/617614907
 
 # Gmsh 和 FiPy 求解稳态圆柱绕流
 
-本项目的源码保存在 github 仓库(https://github.com/cjyyx/CFD_Learning/tree/main/CFD%E8%BD%AF%E4%BB%B6%E5%AD%A6%E4%B9%A0/FiPy/cylinder)。如果下载整个目录，可以直接运行 `SIMPLE.py`，结果如图
+-->
+
+本项目的源码保存在 github 仓库 <https://github.com/cjyyx/CFD_Learning/tree/main/CFD%E8%BD%AF%E4%BB%B6%E5%AD%A6%E4%B9%A0/FiPy/cylinder>。如果下载整个目录，可以直接运行 `SIMPLE.py`，结果如图
 
 ![](assart/p.png)![](assart/Vx.png)![](assart/Vy.png)
 

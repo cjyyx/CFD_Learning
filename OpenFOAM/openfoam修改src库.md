@@ -1,5 +1,6 @@
-#! https://zhuanlan.zhihu.com/p/670815002
-# openfoam 修改 src 库
+<!-- #! <https://zhuanlan.zhihu.com/p/670815002>
+
+# openfoam 修改 src 库经验记录 -->
 
 遇到一个问题，要**把 sprayFoam 求解器的蒸发模型修改为自定义蒸发模型**。
 
@@ -322,7 +323,7 @@ TypeName("myLiquidEvaporation");
 mkdir -p $WM_PROJECT_USER_DIR/src/lagrangian/intermediate/submodels/Reacting/PhaseChangeModel/MyLiquidEvaporation
 ln <项目路径>/MyLiquidEvaporation/MyLiquidEvaporation.H $WM_PROJECT_USER_DIR/src/lagrangian/intermediate/submodels/Reacting/PhaseChangeModel/MyLiquidEvaporation/MyLiquidEvaporation.H
 ln <项目路径>/MyLiquidEvaporation/MyLiquidEvaporation.C $WM_PROJECT_USER_DIR/src/lagrangian/intermediate/submodels/Reacting/PhaseChangeModel/MyLiquidEvaporation/MyLiquidEvaporation.C
-``` 
+```
 
 
 然后在 `$WM_PROJECT_USER_DIR/src/lagrangian/intermediate/parcels/include/makeReactingParcelPhaseChangeModels.H` 中加上

@@ -1,5 +1,6 @@
-#! https://zhuanlan.zhihu.com/p/660892102
-# paraview 安装
+<!-- #! <https://zhuanlan.zhihu.com/p/660892102>
+
+# paraview 安装 -->
 
 ## apt 安装
 
@@ -9,9 +10,9 @@ sudo apt install paraview
 
 ## 安装包安装
 
-参考 https://blog.csdn.net/weixin_47492286/article/details/127210382
+参考 <https://blog.csdn.net/weixin_47492286/article/details/127210382>
 
-下载 https://www.paraview.org/download/
+下载 <https://www.paraview.org/download/>
 
 ```bash
 sudo tar -zxvf ParaView-xxx -C /usr/local/
@@ -42,7 +43,7 @@ Segmentation fault
 
 **因此可以尝试调用 windows 系统中的 paraview**
 
-下载 https://www.paraview.org/download/
+下载 <https://www.paraview.org/download/>
 
 假设 windows 安装路径 `D:\ProgramFiles\ParaView\binparaview.exe` ，注意**路径不要有空格**
 
